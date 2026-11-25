@@ -42,3 +42,24 @@ function submitContact(d){
   try{s.getRange(row,12,1,2).setValues([[notice,reply]]);}catch(e){console.error('Mail status update failed '+id);}
   return {id:id};
 }
+
+/** GitHub Pagesからの通常のHTMLフォームPOST。CORSやiframeの応答に依存しない。 */
+function doPost(e) {
+  const p = (e && e.parameter) || {};
+  let result;
+  try {
+    result = submitContact({
+      type:p.type, company:p.company, name:p.name, email:p.email,
+      phone:p.phone, message:p.message, trap:p.trap,
+      consent:p.consent==='yes', token:p.token
+    });
+  } catch (err) {
+    console.error('Contact submission failed');
+    return contactResultPage_('受付結果を確認できませんでした','再送する前に、info@happysugar.online へお問い合わせください。','');
+  }
+  return contactResultPage_('お問い合わせを受け付けました','内容を確認のうえ、担当者より順次ご連絡いたします。',result.id);
+}
+function contactResultPage_(title,message,id) {
+  const esc = v => String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return HtmlService.createHtmlOutput('<!doctype html><html lang="ja"><head><base target="_top"><meta charset="utf-8"><style>body{font-family:system-ui,sans-serif;background:#fff4f2;color:#20432c;line-height:1.8;margin:0}main{max-width:650px;margin:40px auto;padding:28px;background:white;border-radius:12px}img{width:230px;max-width:100%}a.button{display:inline-block;background:#20432c;color:white;padding:12px 20px;border-radius:5px;text-decoration:none}@media(max-width:700px){main{margin:15px}}</style></head><body><main><img src="https://happysugar.online/assets/logo-horizontal.webp" alt="Happysugar"><h1>'+esc(title)+'</h1><p>'+esc(message)+'</p>'+(id?'<p>受付ID：<strong>'+esc(id)+'</strong></p>':'')+'<a class="button" href="https://happysugar.online/">会社HPに戻る</a><p><a href="mailto:info@happysugar.online">info@happysugar.online</a></p></main></body></html>').setTitle(title).addMetaTag('viewport','width=device-width, initial-scale=1');
+}
